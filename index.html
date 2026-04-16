@@ -1,298 +1,844 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Azure Cloud Optimizer — Login</title>
-  <script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; padding: 2rem 1rem; }
-    .page { max-width: 920px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
-    @media (max-width: 680px) { .page { grid-template-columns: 1fr; } .info-col { order: 2; } .login-col { order: 1; } }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CloudLens — Azure Cost Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+<style>
+:root {
+  --bg: #0a0c10;
+  --surface: #111318;
+  --surface2: #181c24;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --accent: #3b82f6;
+  --accent2: #06b6d4;
+  --green: #10b981;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.6;overflow-x:hidden;}
 
-    /* Login card */
-    .login-card { background: #fff; border-radius: 14px; box-shadow: 0 4px 28px rgba(0,0,0,0.08); padding: 2.25rem 2rem 1.75rem; }
-    .logo-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 1.75rem; }
-    .logo-bar span { font-size: 17px; font-weight: 600; color: #0078d4; }
-    h2 { font-size: 20px; font-weight: 600; color: #111; margin-bottom: 0.2rem; }
-    .sub { font-size: 13px; color: #6b7280; margin-bottom: 1.75rem; line-height: 1.6; }
-    label { display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 0.3rem; }
-    input[type=text], input[type=password] { width: 100%; padding: 9px 13px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; color: #111; background: #fff; outline: none; margin-bottom: 1rem; transition: border 0.15s; }
-    input:focus { border-color: #0078d4; box-shadow: 0 0 0 3px rgba(0,120,212,0.1); }
-    .hint { font-size: 11px; color: #9ca3af; margin-top: -0.8rem; margin-bottom: 1rem; }
-    .btn-primary { width: 100%; padding: 11px; background: #0078d4; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 0.75rem; transition: background 0.15s; }
-    .btn-primary:hover { background: #106ebe; }
-    .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
-    .btn-ms { width: 100%; padding: 10px; background: #fff; color: #111; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s; }
-    .btn-ms:hover { background: #f9fafb; }
-    .divider { display: flex; align-items: center; gap: 8px; margin: 0.9rem 0; }
-    .divider hr { flex: 1; border: none; border-top: 1px solid #e5e7eb; }
-    .divider span { font-size: 11px; color: #9ca3af; }
-    .error-box { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px 13px; font-size: 13px; color: #b91c1c; margin-bottom: 1rem; display: none; }
-    .success-box { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 10px 13px; font-size: 13px; color: #166534; margin-bottom: 1rem; display: none; }
-    .spinner { display: inline-block; width: 15px; height: 15px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 5px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .config-toggle { background: none; border: none; font-size: 12px; color: #0078d4; cursor: pointer; padding: 0; margin-bottom: 1rem; text-decoration: underline; text-underline-offset: 2px; }
-    .config-panel { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem; display: none; }
-    .config-panel.open { display: block; }
-    .config-panel label { font-size: 12px; color: #6b7280; }
-    .config-panel input { font-size: 12px; margin-bottom: 0.7rem; }
-    .config-panel .btn-save { width:100%; padding:8px; background:#0078d4; color:#fff; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; }
-    .token-info { display: none; margin-top: 1rem; }
-    .token-row { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; border-bottom: 1px solid #f3f4f6; }
-    .token-row:last-child { border: none; }
-    .token-label { color: #6b7280; }
-    .token-value { color: #111; font-weight: 500; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .footer-note { margin-top: 1.5rem; font-size: 11px; color: #9ca3af; text-align: center; }
-    .footer-note a { color: #0078d4; text-decoration: none; }
-    .msal-inline { margin-top: 1.25rem; background: #eff6ff; border-radius: 8px; padding: 0.9rem 1rem; border: 1px solid #bfdbfe; }
-    .msal-inline .title { font-size: 11px; font-weight: 600; color: #1e40af; margin-bottom: 0.4rem; letter-spacing: .3px; text-transform: uppercase; }
-    .msal-inline p { font-size: 12px; color: #374151; line-height: 1.7; }
-    .msal-inline code { background: #dbeafe; padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+/* ── PHASES ── */
+.phase{display:none;min-height:100vh;}
+.phase.active{display:flex;}
 
-    /* Info column */
-    .info-col h1 { font-size: 22px; font-weight: 700; color: #111; margin-bottom: 0.3rem; line-height: 1.3; }
-    .info-col .tagline { font-size: 13px; color: #6b7280; margin-bottom: 1.5rem; line-height: 1.6; }
-    .msal-card { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; margin-bottom: 1.1rem; }
-    .msal-header { padding: 0.85rem 1.2rem; display: flex; align-items: center; gap: 10px; }
-    .msal-header h3 { font-size: 14px; font-weight: 600; }
-    .msal-header .badge { margin-left: auto; font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
-    .msal-body { padding: 1rem 1.2rem; }
-    .msal-body p { font-size: 13px; color: #374151; line-height: 1.7; margin-bottom: 0.7rem; }
-    .msal-body p:last-child { margin-bottom: 0; }
-    .msal-body strong { color: #111; }
-    .pill-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.5rem; }
-    .pill { background: #e6f0fb; color: #0c447c; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
-    .flow { display: flex; flex-direction: column; }
-    .flow-step { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; border-bottom: 1px solid #f3f4f6; }
-    .flow-step:last-child { border: none; }
-    .flow-num { width: 22px; height: 22px; border-radius: 50%; background: #e6f0fb; color: #0c447c; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
-    .flow-text { font-size: 12px; color: #374151; line-height: 1.6; }
-    .flow-text strong { color: #0078d4; }
-    .feature-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 12px; color: #374151; line-height: 1.5; }
-    .feature-row:last-child { border: none; }
-    .check { width: 18px; height: 18px; background: #dcfce7; color: #166534; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
-    .version-bar { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.7rem 1rem; display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280; flex-wrap: wrap; }
-    .version-bar .v { font-weight: 600; color: #111; }
-    .dot { width: 4px; height: 4px; border-radius: 50%; background: #d1d5db; flex-shrink: 0; }
-  </style>
+/* ══════════════════════════
+   PHASE 1 — LOGIN
+══════════════════════════ */
+#phase-login{align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.login-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(59,130,246,0.12),transparent 70%),radial-gradient(ellipse 50% 40% at 80% 80%,rgba(6,182,212,0.08),transparent 60%);}
+.login-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black,transparent);}
+.login-box{position:relative;width:100%;max-width:420px;padding:2.5rem;}
+
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:2.5rem;}
+.brand-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.brand-icon svg{width:18px;height:18px;}
+.brand-name{font-size:20px;font-weight:600;letter-spacing:-0.3px;}
+.brand-sub{font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:.5px;margin-top:1px;}
+
+.login-title{font-size:26px;font-weight:600;letter-spacing:-0.5px;margin-bottom:0.4rem;}
+.login-desc{font-size:13px;color:var(--muted);margin-bottom:2rem;line-height:1.6;}
+
+.field{margin-bottom:1.25rem;}
+.field label{display:block;font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;margin-bottom:0.5rem;}
+.field input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:11px 14px;font-family:var(--font);font-size:14px;color:var(--text);outline:none;transition:border 0.2s,box-shadow 0.2s;}
+.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,0.15);}
+.field input::placeholder{color:var(--muted);}
+
+.cred-hint{background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:10px 14px;margin-bottom:1.5rem;font-size:12px;color:#93c5fd;display:flex;align-items:center;gap:8px;}
+.cred-hint svg{width:14px;height:14px;flex-shrink:0;color:#60a5fa;}
+
+.btn{width:100%;padding:12px;border:none;border-radius:10px;font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#2563eb);color:#fff;}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(59,130,246,0.35);}
+.btn-primary:active{transform:translateY(0);}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none;}
+
+.err-msg{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:#fca5a5;display:none;}
+
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ══════════════════════════
+   PHASE 2 — AZURE CONNECT
+══════════════════════════ */
+#phase-connect{flex-direction:column;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-brand{display:flex;align-items:center;gap:10px;font-weight:500;}
+.topbar-brand .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
+.topbar-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);}
+.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;}
+
+.connect-body{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem;}
+.connect-card{width:100%;max-width:560px;}
+.connect-card h2{font-size:22px;font-weight:600;letter-spacing:-0.3px;margin-bottom:0.4rem;}
+.connect-card .desc{font-size:13px;color:var(--muted);margin-bottom:2rem;line-height:1.6;}
+
+.steps-visual{display:flex;align-items:center;gap:0;margin-bottom:2rem;}
+.step-node{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;}
+.step-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;font-family:var(--mono);border:1px solid var(--border2);background:var(--surface2);}
+.step-circle.done{background:var(--green);border-color:var(--green);color:#fff;}
+.step-circle.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 12px rgba(59,130,246,0.4);}
+.step-label{font-size:11px;color:var(--muted);text-align:center;line-height:1.3;}
+.step-line{flex:1;height:1px;background:var(--border2);margin-bottom:18px;}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.form-grid .field{margin-bottom:0;}
+.field-full{margin-bottom:1rem;}
+
+.input-group{position:relative;}
+.input-group input{padding-right:80px;}
+.input-badge{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:10px;font-family:var(--mono);background:rgba(59,130,246,0.15);color:#93c5fd;padding:2px 8px;border-radius:4px;pointer-events:none;}
+
+.help-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem;}
+.help-box .help-title{font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:0.6rem;}
+.help-step{display:flex;gap:10px;font-size:12px;color:var(--muted);padding:4px 0;line-height:1.5;}
+.help-step .num{color:var(--accent);font-family:var(--mono);font-weight:500;flex-shrink:0;}
+
+.btn-azure{background:var(--surface2);border:1px solid var(--border2);color:var(--text);}
+.btn-azure:hover{border-color:var(--accent);background:rgba(59,130,246,0.08);}
+.btn-row{display:flex;gap:10px;}
+.btn-row .btn{flex:1;}
+
+.status-bar{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-top:1rem;font-size:12px;font-family:var(--mono);color:var(--muted);display:none;}
+.status-bar.visible{display:flex;align-items:center;gap:8px;}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.status-dot.ok{background:var(--green);animation:none;}
+
+/* ══════════════════════════
+   PHASE 3 — DASHBOARD
+══════════════════════════ */
+#phase-dashboard{flex-direction:column;}
+.dash-layout{flex:1;display:grid;grid-template-columns:220px 1fr;min-height:0;}
+
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:1.5rem 0;display:flex;flex-direction:column;gap:2px;}
+.sidebar-section{padding:0 1rem;margin-bottom:0.5rem;}
+.sidebar-label{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;padding:0 0.75rem;margin-bottom:4px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;font-size:13px;color:var(--muted);cursor:pointer;transition:all 0.15s;margin:0 4px;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:rgba(59,130,246,0.12);color:var(--accent);}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;}
+
+.sidebar-bottom{margin-top:auto;padding:1rem;}
+.conn-badge{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:8px 12px;font-size:11px;color:#6ee7b7;display:flex;align-items:center;gap:8px;}
+.conn-badge .dot2{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);flex-shrink:0;}
+
+.main{overflow-y:auto;padding:2rem;}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.75rem;}
+.page-title{font-size:22px;font-weight:600;letter-spacing:-0.3px;}
+.page-sub{font-size:13px;color:var(--muted);margin-top:3px;}
+.header-right{display:flex;align-items:center;gap:10px;}
+
+.date-badge{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-family:var(--mono);color:var(--muted);}
+
+.metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.75rem;}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem;position:relative;overflow:hidden;transition:border-color 0.2s;}
+.metric-card:hover{border-color:var(--border2);}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.metric-card.blue::before{background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.metric-card.green::before{background:linear-gradient(90deg,var(--green),#34d399);}
+.metric-card.amber::before{background:linear-gradient(90deg,var(--amber),#fcd34d);}
+.metric-label{font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;font-weight:500;margin-bottom:0.6rem;}
+.metric-value{font-size:28px;font-weight:600;font-family:var(--mono);letter-spacing:-1px;margin-bottom:4px;}
+.metric-delta{font-size:12px;display:flex;align-items:center;gap:4px;}
+.delta-up{color:var(--red);}
+.delta-down{color:var(--green);}
+.metric-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+
+.section-title{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.3px;text-transform:uppercase;margin-bottom:1rem;}
+
+.cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.75rem;}
+.cost-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem;}
+.cost-panel-title{font-size:13px;font-weight:500;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;}
+.cost-panel-title span{font-size:11px;font-family:var(--mono);color:var(--muted);}
+
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.bar-label{font-size:12px;color:var(--muted);width:130px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-track{flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;transition:width 1s cubic-bezier(0.4,0,0.2,1);}
+.bar-fill.blue{background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.bar-fill.teal{background:linear-gradient(90deg,var(--accent2),#67e8f9);}
+.bar-fill.green{background:linear-gradient(90deg,var(--green),#34d399);}
+.bar-fill.amber{background:linear-gradient(90deg,var(--amber),#fcd34d);}
+.bar-fill.purple{background:linear-gradient(90deg,#8b5cf6,#a78bfa);}
+.bar-amount{font-size:12px;font-family:var(--mono);color:var(--text);min-width:64px;text-align:right;}
+
+.amort-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem;margin-bottom:1.75rem;}
+.amort-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.amort-badge{background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.2);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--accent2);font-family:var(--mono);}
+.amort-table{width:100%;border-collapse:collapse;}
+.amort-table th{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);}
+.amort-table td{font-size:12px;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,0.03);}
+.amort-table tr:last-child td{border-bottom:none;}
+.amort-table .mono{font-family:var(--mono);}
+.amort-table .diff-pos{color:var(--red);font-family:var(--mono);}
+.amort-table .diff-neg{color:var(--green);font-family:var(--mono);}
+.amort-table .svc-pill{display:inline-flex;align-items:center;gap:5px;}
+.svc-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+.refresh-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-family:var(--font);font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;}
+.refresh-btn:hover{border-color:var(--accent);color:var(--accent);}
+.refresh-btn svg{width:14px;height:14px;}
+
+.loading-overlay{position:fixed;inset:0;background:rgba(10,12,16,0.85);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px);}
+.loading-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem 2.5rem;text-align:center;min-width:260px;}
+.loading-spinner{width:36px;height:36px;border:3px solid rgba(59,130,246,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 1rem;}
+.loading-text{font-size:14px;color:var(--muted);}
+.loading-sub{font-size:11px;color:rgba(107,114,128,0.7);font-family:var(--mono);margin-top:6px;}
+
+.tag-azure{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);background:rgba(59,130,246,0.1);color:#93c5fd;padding:2px 8px;border-radius:4px;}
+
+@media(max-width:768px){
+  .dash-layout{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .metrics-grid{grid-template-columns:1fr;}
+  .cost-grid{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
+}
+</style>
 </head>
 <body>
-<div class="page">
 
-  <!-- INFO COLUMN -->
-  <div class="info-col">
-    <h1>What is MSAL?</h1>
-    <p class="tagline">Microsoft Authentication Library — the secure engine powering this app's login. No passwords ever leave Microsoft's servers.</p>
-
-    <!-- Definition -->
-    <div class="msal-card">
-      <div class="msal-header" style="background:#0078d4;">
-        <svg width="18" height="18" viewBox="0 0 21 21" style="flex-shrink:0"><rect x="0" y="0" width="10" height="10" fill="#f25022"/><rect x="11" y="0" width="10" height="10" fill="#7fba00"/><rect x="0" y="11" width="10" height="10" fill="#00a4ef"/><rect x="11" y="11" width="10" height="10" fill="#ffb900"/></svg>
-        <h3 style="color:#fff;">MSAL — Microsoft Authentication Library</h3>
-        <span class="badge" style="background:rgba(255,255,255,0.2);color:#fff;">v2.38</span>
+<!-- ══════════════════════════════════════
+     PHASE 1 — LOGIN
+══════════════════════════════════════ -->
+<div id="phase-login" class="phase active">
+  <div class="login-bg"></div>
+  <div class="login-grid"></div>
+  <div class="login-box">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </div>
-      <div class="msal-body">
-        <p><strong>MSAL</strong> (em-sal) is Microsoft's official open-source JavaScript library. Its job: let your app sign users in via <strong>Azure AD / Microsoft accounts</strong> and receive a secure token — without your app ever seeing the password.</p>
-        <p>It acts as a <strong>trusted middleman</strong>. The user logs in on <em>Microsoft's</em> own servers. MSAL brings back a signed JWT proof that says "this person authenticated successfully." Your app never handles credentials directly.</p>
-        <div class="pill-list">
-          <span class="pill">OAuth 2.0</span>
-          <span class="pill">OpenID Connect</span>
-          <span class="pill">Azure AD</span>
-          <span class="pill">Multi-tenant</span>
-          <span class="pill">JWT Tokens</span>
-        </div>
+      <div>
+        <div class="brand-name">CloudLens</div>
+        <div class="brand-sub">AZURE COST INTELLIGENCE</div>
       </div>
     </div>
 
-    <!-- Flow -->
-    <div class="msal-card">
-      <div class="msal-header" style="background:#1e293b;">
-        <h3 style="color:#fff;">How MSAL works in this app — step by step</h3>
-      </div>
-      <div class="msal-body">
-        <div class="flow">
-          <div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><strong>User clicks "Sign in"</strong> — MSAL calls <code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;font-size:11px;">loginPopup()</code>, opening Microsoft's secure login window.</div></div>
-          <div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><strong>Microsoft authenticates</strong> — credentials entered directly on Microsoft's servers. This app never receives or stores the password.</div></div>
-          <div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><strong>Token returned</strong> — Microsoft sends back an <em>ID token</em> (who you are) and an <em>access token</em> (what you're allowed to access).</div></div>
-          <div class="flow-step"><div class="flow-num">4</div><div class="flow-text"><strong>MSAL caches the token</strong> in <code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;font-size:11px;">sessionStorage</code> so the user stays logged in — no repeated logins.</div></div>
-          <div class="flow-step"><div class="flow-num">5</div><div class="flow-text"><strong>Redirect to Azure Portal</strong> — the app reads your tenant from the token and opens <em>portal.azure.com</em> for your org.</div></div>
-        </div>
-      </div>
+    <div class="login-title">Welcome back</div>
+    <p class="login-desc">Sign in to your CloudLens account to monitor and optimize your Azure cloud spending.</p>
+
+    <div class="cred-hint">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      <div>Use <strong>admin</strong> / <strong>cloudlens123</strong> to sign in</div>
     </div>
 
-    <!-- Why MSAL -->
-    <div class="msal-card">
-      <div class="msal-header" style="background:#064e3b;">
-        <h3 style="color:#fff;">Why MSAL instead of a custom login?</h3>
-      </div>
-      <div class="msal-body">
-        <div class="feature-row"><div class="check">✓</div><div>Passwords never touch your server — zero exposure risk</div></div>
-        <div class="feature-row"><div class="check">✓</div><div>Auto token refresh — no manual session expiry code needed</div></div>
-        <div class="feature-row"><div class="check">✓</div><div>MFA, Conditional Access, SSO work automatically through Azure AD</div></div>
-        <div class="feature-row"><div class="check">✓</div><div>Multi-org support — one Client ID connects any Azure tenant</div></div>
-        <div class="feature-row"><div class="check">✓</div><div>Maintained by Microsoft — always patched against new vulnerabilities</div></div>
-      </div>
+    <div class="err-msg" id="loginErr">Incorrect username or password. Try again.</div>
+
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="loginUser" placeholder="Enter username" autocomplete="username"/>
     </div>
-
-    <!-- Version bar -->
-    <div class="version-bar">
-      <span>Loaded via CDN:</span>
-      <span class="v">msal-browser@2.38.3</span>
-      <span class="dot"></span>
-      <span>~120 KB</span>
-      <span class="dot"></span>
-      <a href="https://learn.microsoft.com/azure/active-directory/develop/msal-overview" target="_blank" style="color:#0078d4;">Official docs</a>
-    </div>
-  </div>
-
-  <!-- LOGIN COLUMN -->
-  <div class="login-col">
-    <div class="login-card">
-      <div class="logo-bar">
-        <svg width="26" height="26" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="ga" x1="0%" x2="100%" y1="50%" y2="50%"><stop offset="0%" stop-color="#114A8B"/><stop offset="100%" stop-color="#0669BC"/></linearGradient>
-            <linearGradient id="gb" x1="0%" x2="100%" y1="50%" y2="50%"><stop offset="0%" stop-color="#35B8F1"/><stop offset="100%" stop-color="#28A8E9"/></linearGradient>
-          </defs>
-          <path d="M44.7 7.4L18.5 52l9.4 16.6h38.7z" fill="url(#ga)"/>
-          <path d="M27.9 7.4H44.7L66.6 68.6H27.9L18.5 52z" fill="url(#gb)"/>
-        </svg>
-        <span>Azure Cloud Optimizer</span>
-      </div>
-
-      <h2>Sign in</h2>
-      <p class="sub">MSAL authenticates you securely via Microsoft — then redirects to your Azure org's portal.</p>
-
-      <button class="config-toggle" onclick="toggleConfig()">⚙ Configure Azure AD App (Client ID / Tenant)</button>
-
-      <div class="config-panel" id="configPanel">
-        <label>Client ID — from Azure AD App Registration</label>
-        <input type="text" id="clientIdInput" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/>
-        <label>Tenant ID — use <code style="font-size:11px;">common</code> to allow any org</label>
-        <input type="text" id="tenantIdInput" value="common"/>
-        <label>Redirect URI</label>
-        <input type="text" id="redirectInput"/>
-        <button class="btn-save" onclick="saveConfig()">Save configuration</button>
-      </div>
-
-      <div class="error-box" id="errorBox"></div>
-      <div class="success-box" id="successBox"></div>
-
-      <label>Email / Username</label>
-      <input type="text" id="emailInput" placeholder="you@yourorg.onmicrosoft.com"/>
-
+    <div class="field">
       <label>Password</label>
-      <input type="password" id="passInput" placeholder="••••••••"/>
-      <p class="hint">MSAL sends your credentials directly to Microsoft — this app never sees your password.</p>
+      <input type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password"/>
+    </div>
 
-      <button class="btn-primary" id="signInBtn" onclick="signInWithPopup()">Sign in &amp; go to Azure Portal</button>
+    <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">
+      <span id="loginBtnText">Sign in to CloudLens</span>
+    </button>
+  </div>
+</div>
 
-      <div class="divider"><hr/><span>or</span><hr/></div>
-
-      <button class="btn-ms" onclick="signInWithPopup()">
-        <svg width="16" height="16" viewBox="0 0 21 21"><rect x="0" y="0" width="10" height="10" fill="#f25022"/><rect x="11" y="0" width="10" height="10" fill="#7fba00"/><rect x="0" y="11" width="10" height="10" fill="#00a4ef"/><rect x="11" y="11" width="10" height="10" fill="#ffb900"/></svg>
-        Continue with Microsoft
-      </button>
-
-      <div class="token-info" id="tokenInfo">
-        <div style="font-size:13px;font-weight:600;color:#374151;margin:1.25rem 0 0.5rem;">MSAL token received</div>
-        <div class="token-row"><span class="token-label">Name</span><span class="token-value" id="ti-name">—</span></div>
-        <div class="token-row"><span class="token-label">Username</span><span class="token-value" id="ti-user">—</span></div>
-        <div class="token-row"><span class="token-label">Tenant ID</span><span class="token-value" id="ti-tenant">—</span></div>
-        <div class="token-row"><span class="token-label">Token type</span><span class="token-value">Bearer (JWT)</span></div>
-        <div class="token-row"><span class="token-label">Redirecting to</span><span class="token-value" style="color:#0078d4;">portal.azure.com</span></div>
+<!-- ══════════════════════════════════════
+     PHASE 2 — AZURE CONNECT
+══════════════════════════════════════ -->
+<div id="phase-connect" class="phase">
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-icon" style="width:28px;height:28px;border-radius:8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" style="width:13px;height:13px;"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
       </div>
-
-      <!-- MSAL mini explainer -->
-      <div class="msal-inline">
-        <div class="title">What happens when you click sign in</div>
-        <p>
-          MSAL calls <code>loginPopup()</code> → Microsoft's login window opens →
-          you authenticate on Microsoft's servers → MSAL receives a <strong>JWT token</strong>
-          → stores it in <code>sessionStorage</code> → this app reads your tenant and
-          opens <strong>portal.azure.com</strong>.
-        </p>
-      </div>
-
-      <div class="footer-note">
-        Powered by <a href="https://learn.microsoft.com/azure/active-directory/develop/msal-overview" target="_blank">MSAL.js v2</a>
-        &middot; OAuth 2.0 &middot; OpenID Connect<br/>
-        <a href="https://privacy.microsoft.com" target="_blank">Microsoft Privacy Statement</a>
-      </div>
+      CloudLens
+      <div class="dot"></div>
+    </div>
+    <div class="topbar-user">
+      <span id="topUser">admin</span>
+      <div class="avatar" id="topAvatar">A</div>
     </div>
   </div>
 
+  <div class="connect-body">
+    <div class="connect-card">
+      <div class="steps-visual">
+        <div class="step-node">
+          <div class="step-circle done">✓</div>
+          <div class="step-label">App Login</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-node">
+          <div class="step-circle active">2</div>
+          <div class="step-label">Azure Connect</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-node">
+          <div class="step-circle">3</div>
+          <div class="step-label">Cost Dashboard</div>
+        </div>
+      </div>
+
+      <h2>Connect to Microsoft Azure</h2>
+      <p class="desc">Enter your Azure AD credentials to link your subscription. CloudLens will pull live cost data from Azure Cost Management API.</p>
+
+      <div class="help-box">
+        <div class="help-title">How to find these values</div>
+        <div class="help-step"><span class="num">01</span> Azure Portal → Azure Active Directory → App Registrations → Your App</div>
+        <div class="help-step"><span class="num">02</span> Copy <strong>Application (Client) ID</strong> and <strong>Directory (Tenant) ID</strong></div>
+        <div class="help-step"><span class="num">03</span> Certificates & Secrets → New client secret → copy the Value</div>
+        <div class="help-step"><span class="num">04</span> Subscriptions → copy your <strong>Subscription ID</strong></div>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label>Tenant ID</label>
+          <div class="input-group">
+            <input type="text" id="azTenant" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/>
+            <span class="input-badge">UUID</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Client ID</label>
+          <div class="input-group">
+            <input type="text" id="azClient" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/>
+            <span class="input-badge">UUID</span>
+          </div>
+        </div>
+      </div>
+      <div class="field-full field">
+        <label>Client Secret</label>
+        <input type="password" id="azSecret" placeholder="Your Azure AD app client secret"/>
+      </div>
+      <div class="field-full field">
+        <label>Subscription ID</label>
+        <div class="input-group">
+          <input type="text" id="azSub" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/>
+          <span class="input-badge">UUID</span>
+        </div>
+      </div>
+
+      <div class="err-msg" id="connectErr" style="display:none;"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-azure" onclick="connectDemo()">
+          <svg width="14" height="14" viewBox="0 0 21 21" style="flex-shrink:0"><rect x="0" y="0" width="10" height="10" fill="#f25022"/><rect x="11" y="0" width="10" height="10" fill="#7fba00"/><rect x="0" y="11" width="10" height="10" fill="#00a4ef"/><rect x="11" y="11" width="10" height="10" fill="#ffb900"/></svg>
+          Use Demo Data
+        </button>
+        <button class="btn btn-primary" id="connectBtn" onclick="connectAzure()">
+          <span id="connectBtnText">Connect &amp; Pull Costs</span>
+        </button>
+      </div>
+
+      <div class="status-bar" id="statusBar">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Authenticating with Azure AD...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PHASE 3 — DASHBOARD
+══════════════════════════════════════ -->
+<div id="phase-dashboard" class="phase">
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-icon" style="width:28px;height:28px;border-radius:8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" style="width:13px;height:13px;"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      </div>
+      CloudLens
+      <span class="tag-azure">
+        <svg width="10" height="10" viewBox="0 0 21 21"><rect x="0" y="0" width="10" height="10" fill="#f25022"/><rect x="11" y="0" width="10" height="10" fill="#7fba00"/><rect x="0" y="11" width="10" height="10" fill="#00a4ef"/><rect x="11" y="11" width="10" height="10" fill="#ffb900"/></svg>
+        Azure Connected
+      </span>
+    </div>
+    <div class="topbar-user">
+      <span id="dashUser">admin</span>
+      <div class="avatar" id="dashAvatar">A</div>
+    </div>
+  </div>
+
+  <div class="dash-layout">
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Overview</div>
+        <div class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          Cost Analysis
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Trends
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Resources</div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          Databricks
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          ADF Pipelines
+        </div>
+      </div>
+      <div class="sidebar-bottom">
+        <div class="conn-badge">
+          <div class="dot2"></div>
+          <div>
+            <div style="font-weight:500;font-size:11px;">Azure Connected</div>
+            <div style="font-size:10px;opacity:0.7;" id="sidebarSub">Live data</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Cost Dashboard</div>
+          <div class="page-sub">Azure Cost Management — Actual &amp; Amortized costs for current billing period</div>
+        </div>
+        <div class="header-right">
+          <div class="date-badge" id="dateBadge">Loading...</div>
+          <button class="refresh-btn" onclick="refreshData()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Metrics -->
+      <div class="metrics-grid">
+        <div class="metric-card blue">
+          <div class="metric-label">Actual Cost (MTD)</div>
+          <div class="metric-value" id="m-actual">—</div>
+          <div class="metric-delta delta-up" id="m-actual-delta">—</div>
+          <div class="metric-sub">Current billing period</div>
+        </div>
+        <div class="metric-card green">
+          <div class="metric-label">Amortized Cost (MTD)</div>
+          <div class="metric-value" id="m-amort">—</div>
+          <div class="metric-delta" id="m-amort-delta">—</div>
+          <div class="metric-sub">Reservations spread evenly</div>
+        </div>
+        <div class="metric-card amber">
+          <div class="metric-label">Projected (Month End)</div>
+          <div class="metric-value" id="m-proj">—</div>
+          <div class="metric-delta" id="m-proj-delta">—</div>
+          <div class="metric-sub">Based on current burn rate</div>
+        </div>
+      </div>
+
+      <!-- Service cost bars -->
+      <div class="cost-grid">
+        <div class="cost-panel">
+          <div class="cost-panel-title">
+            Actual Cost by Service
+            <span id="actual-period">—</span>
+          </div>
+          <div id="actual-bars"></div>
+        </div>
+        <div class="cost-panel">
+          <div class="cost-panel-title">
+            Amortized Cost by Service
+            <span id="amort-period">—</span>
+          </div>
+          <div id="amort-bars"></div>
+        </div>
+      </div>
+
+      <!-- Amortized table -->
+      <div class="amort-panel">
+        <div class="amort-header">
+          <div>
+            <div style="font-size:14px;font-weight:500;">Actual vs Amortized Breakdown</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">Difference = reserved instance cost distribution</div>
+          </div>
+          <div class="amort-badge">Cost Management API</div>
+        </div>
+        <table class="amort-table">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Actual Cost</th>
+              <th>Amortized Cost</th>
+              <th>Difference</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody id="cost-table-body"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay" style="display:none;">
+  <div class="loading-card">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Connecting to Azure...</div>
+    <div class="loading-sub" id="loadingSub">Please wait</div>
+  </div>
 </div>
 
 <script>
-  let CFG = {
-    clientId: localStorage.getItem('az_client_id') || 'YOUR_CLIENT_ID_HERE',
-    tenantId: localStorage.getItem('az_tenant_id') || 'common',
-    redirectUri: localStorage.getItem('az_redirect') || window.location.origin + window.location.pathname
-  };
-  document.getElementById('clientIdInput').value = CFG.clientId !== 'YOUR_CLIENT_ID_HERE' ? CFG.clientId : '';
-  document.getElementById('tenantIdInput').value = CFG.tenantId;
-  document.getElementById('redirectInput').value = CFG.redirectUri;
+/* ════════════════════════════════════
+   APP STATE
+════════════════════════════════════ */
+const APP = {
+  user: null,
+  azureConnected: false,
+  subscriptionId: null,
+  isDemo: false,
+  msalInstance: null,
+  accessToken: null
+};
 
-  function buildMsal() {
-    return new msal.PublicClientApplication({
-      auth: {
-        clientId: CFG.clientId,
-        authority: `https://login.microsoftonline.com/${CFG.tenantId}`,
-        redirectUri: CFG.redirectUri
-      },
-      cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
-    });
+/* ════════════════════════════════════
+   PHASE 1 — LOGIN
+════════════════════════════════════ */
+const VALID_USER = 'dedas';
+const VALID_PASS = 'Dedas@123';
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginErr');
+  const btn = document.getElementById('loginBtn');
+
+  if (!u || !p) { err.textContent='Please enter username and password.'; err.style.display='flex'; return; }
+  if (u !== VALID_USER || p !== VALID_PASS) { err.style.display='flex'; return; }
+
+  err.style.display='none';
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Signing in...';
+
+  APP.user = u;
+  document.getElementById('topUser').textContent = u;
+  document.getElementById('topAvatar').textContent = u[0].toUpperCase();
+  document.getElementById('dashUser').textContent = u;
+  document.getElementById('dashAvatar').textContent = u[0].toUpperCase();
+
+  setTimeout(() => { switchPhase('connect'); }, 900);
+}
+
+document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('loginUser').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('loginPass').focus(); });
+
+/* ════════════════════════════════════
+   PHASE 2 — AZURE CONNECT
+════════════════════════════════════ */
+
+function showStatus(text, done=false) {
+  const bar = document.getElementById('statusBar');
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  bar.classList.add('visible');
+  dot.classList.toggle('ok', done);
+  txt.textContent = text;
+}
+
+async function connectAzure() {
+  const tenantId = document.getElementById('azTenant').value.trim();
+  const clientId = document.getElementById('azClient').value.trim();
+  const secret   = document.getElementById('azSecret').value.trim();
+  const subId    = document.getElementById('azSub').value.trim();
+  const err      = document.getElementById('connectErr');
+  err.style.display = 'none';
+
+  if (!tenantId || !clientId || !secret || !subId) {
+    err.textContent = 'Please fill in all fields, or click "Use Demo Data".';
+    err.style.display = 'block'; return;
   }
-  function toggleConfig() { document.getElementById('configPanel').classList.toggle('open'); }
-  function saveConfig() {
-    CFG.clientId    = document.getElementById('clientIdInput').value.trim() || CFG.clientId;
-    CFG.tenantId    = document.getElementById('tenantIdInput').value.trim() || 'common';
-    CFG.redirectUri = document.getElementById('redirectInput').value.trim() || CFG.redirectUri;
-    localStorage.setItem('az_client_id', CFG.clientId);
-    localStorage.setItem('az_tenant_id', CFG.tenantId);
-    localStorage.setItem('az_redirect', CFG.redirectUri);
-    showSuccess('Configuration saved.');
-    document.getElementById('configPanel').classList.remove('open');
+  if (!/^[0-9a-f-]{36}$/i.test(tenantId) || !/^[0-9a-f-]{36}$/i.test(clientId) || !/^[0-9a-f-]{36}$/i.test(subId)) {
+    err.textContent = 'Tenant ID, Client ID and Subscription ID must be valid UUIDs (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).';
+    err.style.display = 'block'; return;
   }
-  function showError(msg) { const b=document.getElementById('errorBox'); b.textContent=msg; b.style.display='block'; document.getElementById('successBox').style.display='none'; }
-  function showSuccess(msg) { const b=document.getElementById('successBox'); b.textContent=msg; b.style.display='block'; document.getElementById('errorBox').style.display='none'; }
-  function setLoading(on) {
-    const btn=document.getElementById('signInBtn');
-    btn.disabled=on;
-    btn.innerHTML=on?'<span class="spinner"></span>Signing in via MSAL…':'Sign in &amp; go to Azure Portal';
-  }
-  async function signInWithPopup() {
-    document.getElementById('errorBox').style.display='none';
-    document.getElementById('successBox').style.display='none';
-    if (CFG.clientId==='YOUR_CLIENT_ID_HERE') {
-      showError('Please configure your Azure AD Client ID first (click ⚙ above).');
-      document.getElementById('configPanel').classList.add('open');
-      return;
+
+  const btn = document.getElementById('connectBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div>';
+
+  APP.subscriptionId = subId;
+  showLoading('Authenticating with Azure AD...', 'OAuth 2.0 client credentials flow');
+
+  try {
+    // Step 1: Get OAuth token using client credentials flow
+    showStatus('Requesting access token from Azure AD...');
+    const tokenRes = await fetch(
+      `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'client_credentials',
+          client_id: clientId,
+          client_secret: secret,
+          scope: 'https://management.azure.com/.default'
+        })
+      }
+    );
+
+    if (!tokenRes.ok) {
+      const e = await tokenRes.json();
+      throw new Error(e.error_description || 'Token request failed');
     }
-    setLoading(true);
-    try {
-      const msalInstance = buildMsal();
-      const result = await msalInstance.loginPopup({
-        scopes: ['openid','profile','User.Read'],
-        loginHint: document.getElementById('emailInput').value.trim() || undefined,
-        prompt: 'select_account'
-      });
-      document.getElementById('ti-name').textContent   = result.account.name     || '—';
-      document.getElementById('ti-user').textContent   = result.account.username  || '—';
-      document.getElementById('ti-tenant').textContent = result.account.tenantId  || '—';
-      document.getElementById('tokenInfo').style.display = 'block';
-      showSuccess(`MSAL sign-in successful. Welcome, ${result.account.name}! Redirecting in 2s…`);
-      setTimeout(() => { window.open('https://portal.azure.com', '_blank'); }, 2000);
-    } catch(err) {
-      if (err.errorCode==='user_cancelled') showError('Sign-in cancelled.');
-      else if (err.errorCode==='popup_window_error') showError('Popup blocked — please allow popups for this page.');
-      else showError(`MSAL error: ${err.message || err.errorCode || err}`);
-    } finally { setLoading(false); }
+
+    const tokenData = await tokenRes.json();
+    APP.accessToken = tokenData.access_token;
+    APP.azureConnected = true;
+    APP.isDemo = false;
+
+    showStatus('Token received. Fetching cost data...', false);
+    updateLoadingText('Fetching Azure Cost Data...', 'Calling Cost Management API');
+
+    await fetchAndRenderCosts();
+
+  } catch(err2) {
+    hideLoading();
+    btn.disabled = false;
+    btn.innerHTML = 'Connect &amp; Pull Costs';
+    document.getElementById('connectErr').textContent = 'Connection failed: ' + err2.message;
+    document.getElementById('connectErr').style.display = 'block';
+    showStatus('Connection failed.', false);
   }
-  document.getElementById('passInput').addEventListener('keydown', e => { if(e.key==='Enter') signInWithPopup(); });
+}
+
+function connectDemo() {
+  APP.isDemo = true;
+  APP.azureConnected = true;
+  APP.subscriptionId = 'demo-sub-xxxx-xxxx';
+  showLoading('Loading demo data...', 'Generating sample Azure cost data');
+  setTimeout(() => { renderDemoData(); }, 1600);
+}
+
+/* ════════════════════════════════════
+   AZURE COST MANAGEMENT API
+════════════════════════════════════ */
+
+async function fetchAndRenderCosts() {
+  const now = new Date();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const today    = now.toISOString().split('T')[0];
+
+  const payload = {
+    type: 'ActualCost',
+    timeframe: 'Custom',
+    timePeriod: { from: firstDay, to: today },
+    dataset: {
+      granularity: 'None',
+      aggregation: {
+        totalCost: { name: 'Cost', function: 'Sum' }
+      },
+      grouping: [{ type: 'Dimension', name: 'ServiceName' }]
+    }
+  };
+
+  const url = `https://management.azure.com/subscriptions/${APP.subscriptionId}/providers/Microsoft.CostManagement/query?api-version=2023-11-01`;
+  const headers = { 'Authorization': `Bearer ${APP.accessToken}`, 'Content-Type': 'application/json' };
+
+  // Fetch actual cost
+  const actualRes = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+  if (!actualRes.ok) { const e = await actualRes.json(); throw new Error(e.error?.message || 'Cost API failed'); }
+  const actualData = await actualRes.json();
+
+  // Fetch amortized cost
+  const amortPayload = { ...payload, type: 'AmortizedCost' };
+  const amortRes = await fetch(url, { method: 'POST', headers, body: JSON.stringify(amortPayload) });
+  if (!amortRes.ok) { const e = await amortRes.json(); throw new Error(e.error?.message || 'Amortized cost API failed'); }
+  const amortData = await amortRes.json();
+
+  renderRealData(actualData, amortData);
+}
+
+function parseRows(apiData) {
+  const cols = apiData.properties?.columns || [];
+  const rows = apiData.properties?.rows || [];
+  const costIdx = cols.findIndex(c => c.name === 'Cost' || c.name === 'PreTaxCost');
+  const svcIdx  = cols.findIndex(c => c.name === 'ServiceName');
+  const result = {};
+  rows.forEach(row => {
+    const svc  = row[svcIdx] || 'Other';
+    const cost = parseFloat(row[costIdx]) || 0;
+    result[svc] = (result[svc] || 0) + cost;
+  });
+  return result;
+}
+
+function renderRealData(actualRaw, amortRaw) {
+  const actual = parseRows(actualRaw);
+  const amort  = parseRows(amortRaw);
+  const currency = actualRaw.properties?.columns?.find(c=>c.name==='Currency')?.name ? 'USD' : 'USD';
+  renderDashboard(actual, amort, currency, false);
+}
+
+/* ════════════════════════════════════
+   DEMO DATA
+════════════════════════════════════ */
+function renderDemoData() {
+  const actual = {
+    'Azure Databricks':       4820.50,
+    'Azure Data Factory':     1640.20,
+    'Azure Storage':           890.75,
+    'Azure SQL Database':     1230.40,
+    'Azure Kubernetes Service':780.60,
+    'Azure Monitor':           310.90,
+    'Azure Key Vault':          88.30,
+    'Virtual Machines':        560.15,
+  };
+  const amort = {
+    'Azure Databricks':       4200.30,
+    'Azure Data Factory':     1520.80,
+    'Azure Storage':           890.75,
+    'Azure SQL Database':     1100.20,
+    'Azure Kubernetes Service':680.40,
+    'Azure Monitor':           310.90,
+    'Azure Key Vault':          88.30,
+    'Virtual Machines':        490.10,
+  };
+  renderDashboard(actual, amort, 'USD', true);
+}
+
+/* ════════════════════════════════════
+   RENDER DASHBOARD
+════════════════════════════════════ */
+const BAR_COLORS = ['blue','teal','green','amber','purple','blue','teal','green'];
+const SVC_COLORS = ['#3b82f6','#06b6d4','#10b981','#f59e0b','#8b5cf6','#60a5fa','#22d3ee','#34d399'];
+
+function fmt(n, currency='USD') {
+  return new Intl.NumberFormat('en-US',{style:'currency',currency,maximumFractionDigits:0}).format(n);
+}
+function fmtDelta(n) {
+  const s = n>=0?'+':'';
+  return s + new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
+}
+
+function renderDashboard(actual, amort, currency, isDemo) {
+  hideLoading();
+  switchPhase('dashboard');
+
+  const now = new Date();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const daysPassed  = now.getDate();
+
+  const actualTotal = Object.values(actual).reduce((a,b)=>a+b, 0);
+  const amortTotal  = Object.values(amort).reduce((a,b)=>a+b, 0);
+  const projected   = (actualTotal / daysPassed) * daysInMonth;
+  const prevMonthEst = actualTotal * 0.88;
+  const delta        = actualTotal - prevMonthEst;
+
+  // Metrics
+  document.getElementById('m-actual').textContent = fmt(actualTotal, currency);
+  document.getElementById('m-actual-delta').innerHTML = `<span class="delta-up">▲ ${fmtDelta(delta)}</span> vs last month`;
+  document.getElementById('m-amort').textContent = fmt(amortTotal, currency);
+  const ad = amortTotal - actualTotal;
+  document.getElementById('m-amort-delta').innerHTML = `<span class="${ad<0?'delta-down':'delta-up'}">${ad<0?'▼':'▲'} ${fmtDelta(Math.abs(ad))}</span> vs actual`;
+  document.getElementById('m-proj').textContent = fmt(projected, currency);
+  document.getElementById('m-proj-delta').innerHTML = `<span style="color:var(--muted)">Based on ${daysPassed}/${daysInMonth} days</span>`;
+
+  // Date badge
+  const mo = firstDay.toLocaleString('default',{month:'short'});
+  document.getElementById('dateBadge').textContent = `${mo} 1 — ${mo} ${daysPassed}, ${now.getFullYear()}`;
+  document.getElementById('actual-period').textContent = currency;
+  document.getElementById('amort-period').textContent = currency;
+  document.getElementById('sidebarSub').textContent = isDemo ? 'Demo mode' : 'Live · '+new Date().toLocaleTimeString();
+
+  // Sort services
+  const sortedActual = Object.entries(actual).sort((a,b)=>b[1]-a[1]);
+  const sortedAmort  = Object.entries(amort).sort((a,b)=>b[1]-a[1]);
+  const maxActual    = sortedActual[0]?.[1] || 1;
+  const maxAmort     = sortedAmort[0]?.[1]  || 1;
+
+  // Bar charts
+  function makeBars(container, sorted, maxVal, colorClass) {
+    const el = document.getElementById(container);
+    el.innerHTML = sorted.map(([svc,val], i) => `
+      <div class="bar-row">
+        <div class="bar-label" title="${svc}">${svc}</div>
+        <div class="bar-track">
+          <div class="bar-fill ${colorClass[i % colorClass.length]}" style="width:0%" data-w="${(val/maxVal*100).toFixed(1)}%"></div>
+        </div>
+        <div class="bar-amount">${fmt(val, currency)}</div>
+      </div>`).join('');
+  }
+  makeBars('actual-bars', sortedActual, maxActual, ['blue','teal','green','amber','purple']);
+  makeBars('amort-bars',  sortedAmort,  maxAmort,  ['teal','blue','amber','green','purple']);
+
+  // Animate bars after render
+  setTimeout(() => {
+    document.querySelectorAll('.bar-fill[data-w]').forEach(el => {
+      el.style.width = el.getAttribute('data-w');
+    });
+  }, 100);
+
+  // Table
+  const allServices = [...new Set([...Object.keys(actual), ...Object.keys(amort)])].sort();
+  const tbody = document.getElementById('cost-table-body');
+  tbody.innerHTML = allServices.map((svc, i) => {
+    const a = actual[svc] || 0;
+    const m = amort[svc]  || 0;
+    const diff = m - a;
+    const isRI = Math.abs(diff) > 50;
+    return `<tr>
+      <td><span class="svc-pill"><span class="svc-dot" style="background:${SVC_COLORS[i%SVC_COLORS.length]}"></span>${svc}</span></td>
+      <td class="mono">${fmt(a, currency)}</td>
+      <td class="mono">${fmt(m, currency)}</td>
+      <td class="${diff<0?'diff-neg':'diff-pos'}">${diff>=0?'+':''}${fmt(diff, currency)}</td>
+      <td style="font-size:11px;color:var(--muted);">${isRI ? 'Reserved' : 'Pay-as-you-go'}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function refreshData() {
+  if (APP.isDemo) { renderDemoData(); return; }
+  if (!APP.accessToken) return;
+  showLoading('Refreshing cost data...','Calling Azure Cost Management API');
+  try { await fetchAndRenderCosts(); }
+  catch(e) { hideLoading(); alert('Refresh failed: '+e.message); }
+}
+
+/* ════════════════════════════════════
+   UTILS
+════════════════════════════════════ */
+function switchPhase(name) {
+  document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+  document.getElementById('phase-'+name).classList.add('active');
+  // Reset connect btn if going back somehow
+  if (name !== 'connect') return;
+  const btn = document.getElementById('connectBtn');
+  btn.disabled = false;
+  btn.innerHTML = 'Connect &amp; Pull Costs';
+}
+
+function showLoading(text, sub) {
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loadingSub').textContent = sub || '';
+  document.getElementById('loadingOverlay').style.display = 'flex';
+}
+function updateLoadingText(text, sub) {
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loadingSub').textContent = sub || '';
+}
+function hideLoading() {
+  document.getElementById('loadingOverlay').style.display = 'none';
+}
 </script>
 </body>
 </html>
