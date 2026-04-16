@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Azure Cloud Optimizer — Login</title>
+  <script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; padding: 2rem 1rem; }
+    .page { max-width: 920px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
+    @media (max-width: 680px) { .page { grid-template-columns: 1fr; } .info-col { order: 2; } .login-col { order: 1; } }
+
+    /* Login card */
+    .login-card { background: #fff; border-radius: 14px; box-shadow: 0 4px 28px rgba(0,0,0,0.08); padding: 2.25rem 2rem 1.75rem; }
+    .logo-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 1.75rem; }
+    .logo-bar span { font-size: 17px; font-weight: 600; color: #0078d4; }
+    h2 { font-size: 20px; font-weight: 600; color: #111; margin-bottom: 0.2rem; }
+    .sub { font-size: 13px; color: #6b7280; margin-bottom: 1.75rem; line-height: 1.6; }
+    label { display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 0.3rem; }
+    input[type=text], input[type=password] { width: 100%; padding: 9px 13px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; color: #111; background: #fff; outline: none; margin-bottom: 1rem; transition: border 0.15s; }
+    input:focus { border-color: #0078d4; box-shadow: 0 0 0 3px rgba(0,120,212,0.1); }
+    .hint { font-size: 11px; color: #9ca3af; margin-top: -0.8rem; margin-bottom: 1rem; }
+    .btn-primary { width: 100%; padding: 11px; background: #0078d4; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 0.75rem; transition: background 0.15s; }
+    .btn-primary:hover { background: #106ebe; }
+    .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
+    .btn-ms { width: 100%; padding: 10px; background: #fff; color: #111; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s; }
+    .btn-ms:hover { background: #f9fafb; }
+    .divider { display: flex; align-items: center; gap: 8px; margin: 0.9rem 0; }
+    .divider hr { flex: 1; border: none; border-top: 1px solid #e5e7eb; }
+    .divider span { font-size: 11px; color: #9ca3af; }
+    .error-box { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px 13px; font-size: 13px; color: #b91c1c; margin-bottom: 1rem; display: none; }
+    .success-box { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 10px 13px; font-size: 13px; color: #166534; margin-bottom: 1rem; display: none; }
+    .spinner { display: inline-block; width: 15px; height: 15px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 5px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .config-toggle { background: none; border: none; font-size: 12px; color: #0078d4; cursor: pointer; padding: 0; margin-bottom: 1rem; text-decoration: underline; text-underline-offset: 2px; }
+    .config-panel { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem; display: none; }
+    .config-panel.open { display: block; }
+    .config-panel label { font-size: 12px; color: #6b7280; }
+    .config-panel input { font-size: 12px; margin-bottom: 0.7rem; }
+    .config-panel .btn-save { width:100%; padding:8px; background:#0078d4; color:#fff; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; }
+    .token-info { display: none; margin-top: 1rem; }
+    .token-row { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; border-bottom: 1px solid #f3f4f6; }
+    .token-row:last-child { border: none; }
+    .token-label { color: #6b7280; }
+    .token-value { color: #111; font-weight: 500; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .footer-note { margin-top: 1.5rem; font-size: 11px; color: #9ca3af; text-align: center; }
+    .footer-note a { color: #0078d4; text-decoration: none; }
+    .msal-inline { margin-top: 1.25rem; background: #eff6ff; border-radius: 8px; padding: 0.9rem 1rem; border: 1px solid #bfdbfe; }
+    .msal-inline .title { font-size: 11px; font-weight: 600; color: #1e40af; margin-bottom: 0.4rem; letter-spacing: .3px; text-transform: uppercase; }
+    .msal-inline p { font-size: 12px; color: #374151; line-height: 1.7; }
+    .msal-inline code { background: #dbeafe; padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+
+    /* Info column */
+    .info-col h1 { font-size: 22px; font-weight: 700; color: #111; margin-bottom: 0.3rem; line-height: 1.3; }
+    .info-col .tagline { font-size: 13px; color: #6b7280; margin-bottom: 1.5rem; line-height: 1.6; }
+    .msal-card { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; margin-bottom: 1.1rem; }
+    .msal-header { padding: 0.85rem 1.2rem; display: flex; align-items: center; gap: 10px; }
+    .msal-header h3 { font-size: 14px; font-weight: 600; }
+    .msal-header .badge { margin-left: auto; font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+    .msal-body { padding: 1rem 1.2rem; }
+    .msal-body p { font-size: 13px; color: #374151; line-height: 1.7; margin-bottom: 0.7rem; }
+    .msal-body p:last-child { margin-bottom: 0; }
+    .msal-body strong { color: #111; }
+    .pill-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.5rem; }
+    .pill { background: #e6f0fb; color: #0c447c; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+    .flow { display: flex; flex-direction: column; }
+    .flow-step { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; border-bottom: 1px solid #f3f4f6; }
+    .flow-step:last-child { border: none; }
+    .flow-num { width: 22px; height: 22px; border-radius: 50%; background: #e6f0fb; color: #0c447c; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .flow-text { font-size: 12px; color: #374151; line-height: 1.6; }
+    .flow-text strong { color: #0078d4; }
+    .feature-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 12px; color: #374151; line-height: 1.5; }
+    .feature-row:last-child { border: none; }
+    .check { width: 18px; height: 18px; background: #dcfce7; color: #166534; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+    .version-bar { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.7rem 1rem; display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280; flex-wrap: wrap; }
+    .version-bar .v { font-weight: 600; color: #111; }
+    .dot { width: 4px; height: 4px; border-radius: 50%; background: #d1d5db; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- INFO COLUMN -->
+  <div class="info-col">
+    <h1>What is MSAL?</h1>
+    <p class="tagline">Microsoft Authentication Library — the secure engine powering this app's login. No passwords ever leave Microsoft's servers.</p>
+
+    <!-- Definition -->
+    <div class="msal-card">
+      <div class="msal-header" style="background:#0078d4;">
+        <svg width="18" height="18" viewBox="0 0 21 21" style="flex-shrink:0"><rect x="0" y="0" width="10" height="10" fill="#f25022"/><rect x="11" y="0" width="10" height="10" fill="#7fba00"/><rect x="0" y="11" width="10" height="10" fill="#00a4ef"/><rect x="11" y="11" width="10" height="10" fill="#ffb900"/></svg>
+        <h3 style="color:#fff;">MSAL — Microsoft Authentication Library</h3>
+        <span class="badge" style="background:rgba(255,255,255,0.2);color:#fff;">v2.38</span>
+      </div>
+      <div class="msal-body">
+        <p><strong>MSAL</strong> (em-sal) is Microsoft's official open-source JavaScript library. Its job: let your app sign users in via <strong>Azure AD / Microsoft accounts</strong> and receive a secure token — without your app ever seeing the password.</p>
+        <p>It acts as a <strong>trusted middleman</strong>. The user logs in on <em>Microsoft's</em> own servers. MSAL brings back a signed JWT proof that says "this person authenticated successfully." Your app never handles credentials directly.</p>
+        <div class="pill-list">
+          <span class="pill">OAuth 2.0</span>
+          <span class="pill">OpenID Connect</span>
+          <span class="pill">Azure AD</span>
+          <span class="pill">Multi-tenant</span>
+          <span class="pill">JWT Tokens</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flow -->
+    <div class="msal-card">
+      <div class="msal-header" style="background:#1e293b;">
+        <h3 style="color:#fff;">How MSAL works in this app — step by step</h3>
+      </div>
+      <div class="msal-body">
+        <div class="flow">
+          <div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><strong>User clicks "Sign in"</strong> — MSAL calls <code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;font-size:11px;">loginPopup()</code>, opening Microsoft's secure login window.</div></div>
+          <div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><strong>Microsoft authenticates</strong> — credentials entered directly on Microsoft's servers. This app never receives or stores the password.</div></div>
+          <div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><strong>Token returned</strong> — Microsoft sends back an <em>ID token</em> (who you are) and an <em>access token</em> (what you're allowed to access).</div></div>
+          <div class="flow-step"><div class="flow-num">4</div><div class="flow-text"><strong>MSAL caches the token</strong> in <code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;font-size:11px;">sessionStorage</code> so the user stays logged in — no repeated logins.</div></div>
+          <div class="flow-step"><div class="flow-num">5</div><div class="flow-text"><strong>Redirect to Azure Portal</strong> — the app reads your tenant from the token and opens <em>portal.azure.com</em> for your org.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Why MSAL -->
+    <div class="msal-card">
+      <div class="msal-header" style="background:#064e3b;">
+        <h3 style="color:#fff;">Why MSAL instead of a custom login?</h3>
+      </div>
+      <div class="msal-body">
+        <div class="feature-row"><div class="check">✓</div><div>Passwords never touch your server — zero exposure risk</div></div>
+        <div class="feature-row"><div class="check">✓</div><div>Auto token refresh — no manual session expiry code needed</div></div>
+        <div class="feature-row"><div class="check">✓</div><div>MFA, Conditional Access, SSO work automatically through Azure AD</div></div>
+        <div class="feature-row"><div class="check">✓</div><div>Multi-org support — one Client ID connects any Azure tenant</div></div>
+        <div class="feature-row"><div class="check">✓</div><div>Maintained by Microsoft — always patched against new vulnerabilities</div></div>
+      </div>
+    </div>
+
+    <!-- Version bar -->
+    <div class="version-bar">
+      <span>Loaded via CDN:</span>
+      <span class="v">msal-browser@2.38.3</span>
+      <span class="dot"></span>
+      <span>~120 KB</span>
+      <span class="dot"></span>
+      <a href="https://learn.microsoft.com/azure/active-directory/develop/msal-overview" target="_blank" style="color:#0078d4;">Official docs</a>
+    </div>
+  </div>
+
+  <!-- LOGIN COLUMN -->
+  <div class="login-col">
+    <div class="login-card">
+      <div class="logo-bar">
+        <svg width="26" height="26" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ga" x1="0%" x2="100%" y1="50%" y2="50%"><stop offset="0%" stop-color="#114A8B"/><stop offset="100%" stop-color="#0669BC"/></linearGradient>
+            <linearGradient id="gb" x1="0%" x2="100%" y1="50%" y2="50%"><stop offset="0%" stop-color="#35B8F1"/><stop offset="100%" stop-color="#28A8E9"/></linearGradient>
+          </defs>
+          <path d="M44.7 7.4L18.5 52l9.4 16.6h38.7z" fill="url(#ga)"/>
+          <path d="M27.9 7.4H44.7L66.6 68.6H27.9L18.5 52z" fill="url(#gb)"/>
+        </svg>
+        <span>Azure Cloud Optimizer</span>
+      </div>
+
+      <h2>Sign in</h2>
+      <p class="sub">MSAL authenticates you securely via Microsoft — then redirects to your Azure org's portal.</p>
+
+      <button class="config-toggle" onclick="toggleConfig()">⚙ Configure Azure AD App (Client ID / Tenant)</button>
+
+      <div class="config-panel" id="configPanel">
+        <label>Client ID — from Azure AD App Registration</label>
+        <input type="text" id="clientIdInput" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/>
+        <label>Tenant ID — use <code style="font-size:11px;">common</code> to allow any org</label>
+        <input type="text" id="tenantIdInput" value="common"/>
+        <label>Redirect URI</label>
+        <input type="text" id="redirectInput"/>
+        <button class="btn-save" onclick="saveConfig()">Save configuration</button>
+      </div>
+
+      <div class="error-box" id="errorBox"></div>
+      <div class="success-box" id="successBox"></div>
+
+      <label>Email / Username</label>
+      <input type="text" id="emailInput" placeholder="you@yourorg.onmicrosoft.com"/>
+
+      <label>Password</label>
+      <input type="password" id="passInput" placeholder="••••••••"/>
+      <p class="hint">MSAL sends your credentials directly to Microsoft — this app never sees your password.</p>
+
+      <button class="btn-primary" id="signInBtn" onclick="signInWithPopup()">Sign in &amp; go to Azure Portal</button>
+
+      <div class="divider"><hr/><span>or</span><hr/></div>
+
+      <button class="btn-ms" onclick="signInWithPopup()">
+        <svg width="16" height="16" viewBox="0 0 21 21"><rect x="0" y="0" width="10" height="10" fill="#f25022"/><rect x="11" y="0" width="10" height="10" fill="#7fba00"/><rect x="0" y="11" width="10" height="10" fill="#00a4ef"/><rect x="11" y="11" width="10" height="10" fill="#ffb900"/></svg>
+        Continue with Microsoft
+      </button>
+
+      <div class="token-info" id="tokenInfo">
+        <div style="font-size:13px;font-weight:600;color:#374151;margin:1.25rem 0 0.5rem;">MSAL token received</div>
+        <div class="token-row"><span class="token-label">Name</span><span class="token-value" id="ti-name">—</span></div>
+        <div class="token-row"><span class="token-label">Username</span><span class="token-value" id="ti-user">—</span></div>
+        <div class="token-row"><span class="token-label">Tenant ID</span><span class="token-value" id="ti-tenant">—</span></div>
+        <div class="token-row"><span class="token-label">Token type</span><span class="token-value">Bearer (JWT)</span></div>
+        <div class="token-row"><span class="token-label">Redirecting to</span><span class="token-value" style="color:#0078d4;">portal.azure.com</span></div>
+      </div>
+
+      <!-- MSAL mini explainer -->
+      <div class="msal-inline">
+        <div class="title">What happens when you click sign in</div>
+        <p>
+          MSAL calls <code>loginPopup()</code> → Microsoft's login window opens →
+          you authenticate on Microsoft's servers → MSAL receives a <strong>JWT token</strong>
+          → stores it in <code>sessionStorage</code> → this app reads your tenant and
+          opens <strong>portal.azure.com</strong>.
+        </p>
+      </div>
+
+      <div class="footer-note">
+        Powered by <a href="https://learn.microsoft.com/azure/active-directory/develop/msal-overview" target="_blank">MSAL.js v2</a>
+        &middot; OAuth 2.0 &middot; OpenID Connect<br/>
+        <a href="https://privacy.microsoft.com" target="_blank">Microsoft Privacy Statement</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let CFG = {
+    clientId: localStorage.getItem('az_client_id') || 'YOUR_CLIENT_ID_HERE',
+    tenantId: localStorage.getItem('az_tenant_id') || 'common',
+    redirectUri: localStorage.getItem('az_redirect') || window.location.origin + window.location.pathname
+  };
+  document.getElementById('clientIdInput').value = CFG.clientId !== 'YOUR_CLIENT_ID_HERE' ? CFG.clientId : '';
+  document.getElementById('tenantIdInput').value = CFG.tenantId;
+  document.getElementById('redirectInput').value = CFG.redirectUri;
+
+  function buildMsal() {
+    return new msal.PublicClientApplication({
+      auth: {
+        clientId: CFG.clientId,
+        authority: `https://login.microsoftonline.com/${CFG.tenantId}`,
+        redirectUri: CFG.redirectUri
+      },
+      cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
+    });
+  }
+  function toggleConfig() { document.getElementById('configPanel').classList.toggle('open'); }
+  function saveConfig() {
+    CFG.clientId    = document.getElementById('clientIdInput').value.trim() || CFG.clientId;
+    CFG.tenantId    = document.getElementById('tenantIdInput').value.trim() || 'common';
+    CFG.redirectUri = document.getElementById('redirectInput').value.trim() || CFG.redirectUri;
+    localStorage.setItem('az_client_id', CFG.clientId);
+    localStorage.setItem('az_tenant_id', CFG.tenantId);
+    localStorage.setItem('az_redirect', CFG.redirectUri);
+    showSuccess('Configuration saved.');
+    document.getElementById('configPanel').classList.remove('open');
+  }
+  function showError(msg) { const b=document.getElementById('errorBox'); b.textContent=msg; b.style.display='block'; document.getElementById('successBox').style.display='none'; }
+  function showSuccess(msg) { const b=document.getElementById('successBox'); b.textContent=msg; b.style.display='block'; document.getElementById('errorBox').style.display='none'; }
+  function setLoading(on) {
+    const btn=document.getElementById('signInBtn');
+    btn.disabled=on;
+    btn.innerHTML=on?'<span class="spinner"></span>Signing in via MSAL…':'Sign in &amp; go to Azure Portal';
+  }
+  async function signInWithPopup() {
+    document.getElementById('errorBox').style.display='none';
+    document.getElementById('successBox').style.display='none';
+    if (CFG.clientId==='YOUR_CLIENT_ID_HERE') {
+      showError('Please configure your Azure AD Client ID first (click ⚙ above).');
+      document.getElementById('configPanel').classList.add('open');
+      return;
+    }
+    setLoading(true);
+    try {
+      const msalInstance = buildMsal();
+      const result = await msalInstance.loginPopup({
+        scopes: ['openid','profile','User.Read'],
+        loginHint: document.getElementById('emailInput').value.trim() || undefined,
+        prompt: 'select_account'
+      });
+      document.getElementById('ti-name').textContent   = result.account.name     || '—';
+      document.getElementById('ti-user').textContent   = result.account.username  || '—';
+      document.getElementById('ti-tenant').textContent = result.account.tenantId  || '—';
+      document.getElementById('tokenInfo').style.display = 'block';
+      showSuccess(`MSAL sign-in successful. Welcome, ${result.account.name}! Redirecting in 2s…`);
+      setTimeout(() => { window.open('https://portal.azure.com', '_blank'); }, 2000);
+    } catch(err) {
+      if (err.errorCode==='user_cancelled') showError('Sign-in cancelled.');
+      else if (err.errorCode==='popup_window_error') showError('Popup blocked — please allow popups for this page.');
+      else showError(`MSAL error: ${err.message || err.errorCode || err}`);
+    } finally { setLoading(false); }
+  }
+  document.getElementById('passInput').addEventListener('keydown', e => { if(e.key==='Enter') signInWithPopup(); });
+</script>
+</body>
+</html>
